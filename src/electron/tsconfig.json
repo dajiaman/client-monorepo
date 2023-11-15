@@ -27,9 +27,6 @@
     "lib": [
       "ES6",
       "es2015",
-      "DOM",
-      "DOM.Iterable",
-      "WebWorker.ImportScripts"
     ],
     "types": [
       "node",
@@ -37,7 +34,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "./typings",
-    "src/preload.js",
+    "./typings/**/*.d.ts",
+    "./typings/**/*.ts",
   ]
 }
