@@ -1,293 +1,294 @@
+console.log("preload");
+
 // @ts-check
 (function () {
-  "use strict";
+	"use strict";
 
-  const { ipcRenderer, webFrame, contextBridge } = require("electron");
+	const { ipcRenderer, webFrame, contextBridge } = require("electron");
 
-  //#region Utilities
+	//#region Utilities
 
-  /**
-   * @param {string} channel
-   * @returns {true | never}
-   */
-  function validateIPC(channel) {
-    // if (!channel || !channel.startsWith("vscode:")) {
-    //   throw new Error(`Unsupported event IPC channel '${channel}'`);
-    // }
+	/**
+	 * @param {string} channel
+	 * @returns {true | never}
+	 */
+	function validateIPC(channel) {
+		// if (!channel || !channel.startsWith("vscode:")) {
+		//   throw new Error(`Unsupported event IPC channel '${channel}'`);
+		// }
 
-    return true;
-  }
+		return true;
+	}
 
-  /**
-   * @param {string} key the name of the process argument to parse
-   * @returns {string | undefined}
-   */
-  function parseArgv(key) {
-    for (const arg of process.argv) {
-      if (arg.indexOf(`--${key}=`) === 0) {
-        return arg.split("=")[1];
-      }
-    }
+	/**
+	 * @param {string} key the name of the process argument to parse
+	 * @returns {string | undefined}
+	 */
+	function parseArgv(key) {
+		for (const arg of process.argv) {
+			if (arg.indexOf(`--${key}=`) === 0) {
+				return arg.split("=")[1];
+			}
+		}
 
-    return undefined;
-  }
+		return undefined;
+	}
 
-  //#endregion
+	//#endregion
 
-  //#region Resolve Configuration
+	//#region Resolve Configuration
 
+	//#endregion
 
-  //#endregion
+	//#region Resolve Shell Environment
 
-  //#region Resolve Shell Environment
+	//#endregion
 
+	//#region Globals Definition
 
-  //#endregion
+	// #######################################################################
+	// ###                                                                 ###
+	// ###       !!! DO NOT USE GET/SET PROPERTIES ANYWHERE HERE !!!       ###
+	// ###       !!!  UNLESS THE ACCESS IS WITHOUT SIDE EFFECTS  !!!       ###
+	// ###       (https://github.com/electron/electron/issues/25516)       ###
+	// ###                                                                 ###
+	// #######################################################################
 
-  //#region Globals Definition
+	/**
+	 * @type {import('./globals')}
+	 */
+	const globals = {
+		/**
+		 * A minimal set of methods exposed from Electron's `ipcRenderer`
+		 * to support communication to main process.
+		 *
+		 * @typedef {import('./electronTypes').IpcRenderer} IpcRenderer
+		 * @typedef {import('electron').IpcRendererEvent} IpcRendererEvent
+		 *
+		 * @type {IpcRenderer}
+		 */
 
-  // #######################################################################
-  // ###                                                                 ###
-  // ###       !!! DO NOT USE GET/SET PROPERTIES ANYWHERE HERE !!!       ###
-  // ###       !!!  UNLESS THE ACCESS IS WITHOUT SIDE EFFECTS  !!!       ###
-  // ###       (https://github.com/electron/electron/issues/25516)       ###
-  // ###                                                                 ###
-  // #######################################################################
+		ipcRenderer: {
+			/**
+			 * @param {string} channel
+			 * @param {any[]} args
+			 */
+			send(channel, ...args) {
+				if (validateIPC(channel)) {
+					ipcRenderer.send(channel, ...args);
+				}
+			},
 
-  /**
-   * @type {import('./globals')}
-   */
-  const globals = {
-    /**
-     * A minimal set of methods exposed from Electron's `ipcRenderer`
-     * to support communication to main process.
-     *
-     * @typedef {import('./electronTypes').IpcRenderer} IpcRenderer
-     * @typedef {import('electron').IpcRendererEvent} IpcRendererEvent
-     *
-     * @type {IpcRenderer}
-     */
+			/**
+			 * @param {string} channel
+			 * @param {any[]} args
+			 * @returns {Promise<any>}
+			 */
+			invoke(channel, ...args) {
+				validateIPC(channel);
 
-    ipcRenderer: {
-      /**
-       * @param {string} channel
-       * @param {any[]} args
-       */
-      send(channel, ...args) {
-        if (validateIPC(channel)) {
-          ipcRenderer.send(channel, ...args);
-        }
-      },
+				return ipcRenderer.invoke(channel, ...args);
+			},
 
-      /**
-       * @param {string} channel
-       * @param {any[]} args
-       * @returns {Promise<any>}
-       */
-      invoke(channel, ...args) {
-        validateIPC(channel);
+			/**
+			 * @param {string} channel
+			 * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
+			 * @returns {IpcRenderer}
+			 */
+			on(channel, listener) {
+				validateIPC(channel);
 
-        return ipcRenderer.invoke(channel, ...args);
-      },
+				ipcRenderer.on(channel, listener);
 
-      /**
-       * @param {string} channel
-       * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
-       * @returns {IpcRenderer}
-       */
-      on(channel, listener) {
-        validateIPC(channel);
+				return this;
+			},
 
-        ipcRenderer.on(channel, listener);
+			/**
+			 * @param {string} channel
+			 * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
+			 * @returns {IpcRenderer}
+			 */
+			once(channel, listener) {
+				validateIPC(channel);
 
-        return this;
-      },
+				ipcRenderer.once(channel, listener);
 
-      /**
-       * @param {string} channel
-       * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
-       * @returns {IpcRenderer}
-       */
-      once(channel, listener) {
-        validateIPC(channel);
+				return this;
+			},
 
-        ipcRenderer.once(channel, listener);
+			/**
+			 * @param {string} channel
+			 * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
+			 * @returns {IpcRenderer}
+			 */
+			removeListener(channel, listener) {
+				validateIPC(channel);
 
-        return this;
-      },
+				ipcRenderer.removeListener(channel, listener);
 
-      /**
-       * @param {string} channel
-       * @param {(event: IpcRendererEvent, ...args: any[]) => void} listener
-       * @returns {IpcRenderer}
-       */
-      removeListener(channel, listener) {
-        validateIPC(channel);
+				return this;
+			},
+		},
 
-        ipcRenderer.removeListener(channel, listener);
+		/**
+		 * @type {import('./globals').IpcMessagePort}
+		 */
+		ipcMessagePort: {
+			/**
+			 * @param {string} responseChannel
+			 * @param {string} nonce
+			 */
+			acquire(responseChannel, nonce) {
+				if (validateIPC(responseChannel)) {
+					const responseListener = (
+						/** @type {IpcRendererEvent} */ e,
+						/** @type {string} */ responseNonce
+					) => {
+						// validate that the nonce from the response is the same
+						// as when requested. and if so, use `postMessage` to
+						// send the `MessagePort` safely over, even when context
+						// isolation is enabled
+						if (nonce === responseNonce) {
+							ipcRenderer.off(responseChannel, responseListener);
+							window.postMessage(nonce, "*", e.ports);
+						}
+					};
 
-        return this;
-      },
-    },
+					// handle reply from main
+					ipcRenderer.on(responseChannel, responseListener);
+				}
+			},
+		},
 
-    /**
-     * @type {import('./globals').IpcMessagePort}
-     */
-    ipcMessagePort: {
-      /**
-       * @param {string} responseChannel
-       * @param {string} nonce
-       */
-      acquire(responseChannel, nonce) {
-        if (validateIPC(responseChannel)) {
-          const responseListener = (
-            /** @type {IpcRendererEvent} */ e,
-            /** @type {string} */ responseNonce
-          ) => {
-            // validate that the nonce from the response is the same
-            // as when requested. and if so, use `postMessage` to
-            // send the `MessagePort` safely over, even when context
-            // isolation is enabled
-            if (nonce === responseNonce) {
-              ipcRenderer.off(responseChannel, responseListener);
-              window.postMessage(nonce, "*", e.ports);
-            }
-          };
+		/**
+		 * Support for subset of methods of Electron's `webFrame` type.
+		 *
+		 * @type {import('./electronTypes').WebFrame}
+		 */
+		webFrame: {
+			/**
+			 * @param {number} level
+			 */
+			setZoomLevel(level) {
+				if (typeof level === "number") {
+					webFrame.setZoomLevel(level);
+				}
+			},
+		},
 
-          // handle reply from main
-          ipcRenderer.on(responseChannel, responseListener);
-        }
-      },
-    },
+		/**
+		 * Support for a subset of access to node.js global `process`.
+		 *
+		 * Note: when `sandbox` is enabled, the only properties available
+		 * are https://github.com/electron/electron/blob/master/docs/api/process.md#sandbox
+		 *
+		 * @typedef {import('./globals').ISandboxNodeProcess} ISandboxNodeProcess
+		 *
+		 * @type {ISandboxNodeProcess}
+		 */
+		process: {
+			get platform() {
+				return process.platform;
+			},
+			get arch() {
+				return process.arch;
+			},
+			get env() {
+				return { ...process.env };
+			},
+			get versions() {
+				return process.versions;
+			},
+			get type() {
+				return "renderer";
+			},
+			get execPath() {
+				return process.execPath;
+			},
 
-    /**
-     * Support for subset of methods of Electron's `webFrame` type.
-     *
-     * @type {import('./electronTypes').WebFrame}
-     */
-    webFrame: {
-      /**
-       * @param {number} level
-       */
-      setZoomLevel(level) {
-        if (typeof level === "number") {
-          webFrame.setZoomLevel(level);
-        }
-      },
-    },
+			/**
+			 * @returns {string}
+			 */
+			cwd() {
+				return (
+					process.env["VSCODE_CWD"] ||
+					process.execPath.substr(
+						0,
+						process.execPath.lastIndexOf(
+							process.platform === "win32" ? "\\" : "/"
+						)
+					)
+				);
+			},
 
-    /**
-     * Support for a subset of access to node.js global `process`.
-     *
-     * Note: when `sandbox` is enabled, the only properties available
-     * are https://github.com/electron/electron/blob/master/docs/api/process.md#sandbox
-     *
-     * @typedef {import('./globals').ISandboxNodeProcess} ISandboxNodeProcess
-     *
-     * @type {ISandboxNodeProcess}
-     */
-    process: {
-      get platform() {
-        return process.platform;
-      },
-      get arch() {
-        return process.arch;
-      },
-      get env() {
-        return { ...process.env };
-      },
-      get versions() {
-        return process.versions;
-      },
-      get type() {
-        return "renderer";
-      },
-      get execPath() {
-        return process.execPath;
-      },
+			/**
+			 * @returns {Promise<typeof process.env>}
+			 */
+			shellEnv() {
+				return resolveShellEnv;
+			},
 
-      /**
-       * @returns {string}
-       */
-      cwd() {
-        return (
-          process.env["VSCODE_CWD"] ||
-          process.execPath.substr(
-            0,
-            process.execPath.lastIndexOf(
-              process.platform === "win32" ? "\\" : "/"
-            )
-          )
-        );
-      },
+			/**
+			 * @returns {Promise<import('electron').ProcessMemoryInfo>}
+			 */
+			getProcessMemoryInfo() {
+				return process.getProcessMemoryInfo();
+			},
 
-      /**
-       * @returns {Promise<typeof process.env>}
-       */
-      shellEnv() {
-        return resolveShellEnv;
-      },
+			/**
+			 * @param {string} type
+			 * @param {Function} callback
+			 * @returns {void}
+			 */
+			on(type, callback) {
+				// @ts-ignore
+				process.on(type, callback);
+			},
+		},
 
-      /**
-       * @returns {Promise<import('electron').ProcessMemoryInfo>}
-       */
-      getProcessMemoryInfo() {
-        return process.getProcessMemoryInfo();
-      },
+		/**
+		 * Some information about the context we are running in.
+		 *
+		 * @type {import('./globals').ISandboxContext}
+		 */
+		context: {
+			/**
+			 * A configuration object made accessible from the main side
+			 * to configure the sandbox browser window.
+			 *
+			 * Note: intentionally not using a getter here because the
+			 * actual value will be set after `resolveConfiguration`
+			 * has finished.
+			 *
+			 * @returns {ISandboxConfiguration | undefined}
+			 */
+			configuration() {
+				return configuration;
+			},
 
-      /**
-       * @param {string} type
-       * @param {Function} callback
-       * @returns {void}
-       */
-      on(type, callback) {
-        // @ts-ignore
-        process.on(type, callback);
-      },
-    },
+			/**
+			 * Allows to await the resolution of the configuration object.
+			 *
+			 * @returns {Promise<ISandboxConfiguration>}
+			 */
+			async resolveConfiguration() {
+				return resolveConfiguration;
+			},
+		},
+	};
 
-    /**
-     * Some information about the context we are running in.
-     *
-     * @type {import('./globals').ISandboxContext}
-     */
-    context: {
-      /**
-       * A configuration object made accessible from the main side
-       * to configure the sandbox browser window.
-       *
-       * Note: intentionally not using a getter here because the
-       * actual value will be set after `resolveConfiguration`
-       * has finished.
-       *
-       * @returns {ISandboxConfiguration | undefined}
-       */
-      configuration() {
-        return configuration;
-      },
-
-      /**
-       * Allows to await the resolution of the configuration object.
-       *
-       * @returns {Promise<ISandboxConfiguration>}
-       */
-      async resolveConfiguration() {
-        return resolveConfiguration;
-      },
-    },
-  };
-
-  // Use `contextBridge` APIs to expose globals to VSCode
-  // only if context isolation is enabled, otherwise just
-  // add to the DOM global.
-  if (process.contextIsolated) {
-    try {
-      contextBridge.exposeInMainWorld("vscode", globals);
-    } catch (error) {
-      console.error(error);
-    }
-  } else {
-    // @ts-ignore
-    window.vscode = globals;
-  }
+	// Use `contextBridge` APIs to expose globals to VSCode
+	// only if context isolation is enabled, otherwise just
+	// add to the DOM global.
+	if (process.contextIsolated) {
+		try {
+			contextBridge.exposeInMainWorld("vscode", globals);
+		} catch (error) {
+			console.error(error);
+		}
+	} else {
+		// @ts-ignore
+		window.vscode = globals;
+		console.log('globals:', globals);
+	}
 })();

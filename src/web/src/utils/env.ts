@@ -27,7 +27,7 @@ const configs = <IEnvConfig>{
     userCenterUrl: "http://test.user.funcode.live/#/memberLogin",
   },
   production: {
-    apiUrl: "https://api.chatknow.com",
+    apiUrl: "https://mock.apifox.com/m1/3564554-0-default",
     helpUrl: "https://www.chatknow.com/help",
     websiteUrl: "https://www.chatknow.com",
     downloadUrl: "https://www.chatknow.com/download",
