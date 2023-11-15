@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true, //  启用装饰器
+    "noFallthroughCasesInSwitch": false, // 检查switch表达式的正确性，每个非空case都有break，或者return
+    "noImplicitAny": true, // 不允许隐式的 any 类型
+    "noImplicitReturns": true, //每个分支都会有返回值
+    "noImplicitOverride": true, // 检查派生类重写的方法是否使用override 修饰符
+    "noUnusedLocals": false, // 检查只声明、未使用的局部变量(只提示不报错)
+    "allowUnreachableCode": true, // 代码中的无效代码提示
+    "strict": true, // 允许strict类型检查
+    "exactOptionalPropertyTypes": false, // 严格检查具有后缀?的接口或属性取值
+    "useUnknownInCatchVariables": false, //默认any类型的catch分支参数error是否需要设置为unknown
+    "forceConsistentCasingInFileNames": true, // 引入文件文件名大小写敏感
+    "target": "es2022",
+    "useDefineForClassFields": false, // 定义升级版本的 ClassFields
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker.ImportScripts"
+    ],
+    "paths": {
+      "lib/*": [
+        "../lib/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "./typings",
+    "./src/types/**.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

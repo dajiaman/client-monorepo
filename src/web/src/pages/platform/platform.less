@@ -1,0 +1,15 @@
+.platform-page {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+
+    .right-session-panel-wrapper {
+        transition: width 0.2s ease;
+
+        &.is-hidden {
+            width: 0px;
+            display: none !important;
+        }
+    }
+}

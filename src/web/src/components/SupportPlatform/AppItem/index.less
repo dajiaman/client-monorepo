@@ -1,0 +1,32 @@
+.app-item {
+    display: flex;
+    position: relative;
+    border-radius: 4px;
+    background-color: var(--color-fill-2);
+    border: 1px solid var(--color-border);
+    margin: 0px 10px 20px;
+    width: 200px;
+    height: 120px;
+
+    .checkbox-wrapper {
+        position: absolute;
+    }
+
+    .body {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        .icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .name {
+            margin-top: 10px;
+            color: var(--color-text-1);
+        }
+    }
+}

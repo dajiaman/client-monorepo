@@ -1,0 +1,186 @@
+.setting {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-width: 700px;
+
+    .setting-header {
+        height: 60px;
+        line-height: 60px;
+        background-color: var(--color-fill-2);
+        border-bottom: 1px solid var(--color-border);
+        padding-left: 40px;
+        font-size: 20px;
+    }
+
+    .setting-content {
+        overflow: hidden;
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+
+        .left-frame {
+            // background-color: var(--color-bg-2);
+            background-color: var(--color-fill-2);
+            width: 210px;
+            box-sizing: border-box;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: overlay;
+
+            .sidebar-card {
+                display: flex;
+                align-items: center;
+                position: relative;
+                cursor: pointer;
+                height: 44px;
+                margin: 10px 8px;
+                padding-left: 30px;
+                transition: background-color 0.2s ease-in;
+                border-radius: var(--border-radius-medium);
+
+                .tag {
+                    margin-left: 10px;
+                }
+
+                &.selected {
+                    background-color: rgb(var(--primary-6), 0.4);
+                    color: rgb(var(--primary-6));
+                }
+            }
+        }
+
+        .right-frame {
+            flex: 1;
+            box-sizing: border-box;
+            padding: 0;
+
+            .all-setting {
+                width: calc(100% - 40px);
+                min-width: 600px;
+                margin: 0 20px;
+
+                .setting-section {
+                    min-height: 25px;
+                    border-top: 1px solid var(--color-border);
+                    padding-top: 32px;
+                    padding-bottom: 30px;
+
+                    &:first-child {
+                        border-top: none;
+                    }
+
+                    .arco-checkbox,
+                    .arco-radio-group,
+                    .arco-radio {
+                        padding-left: 0px;
+                    }
+
+                    // 大标题
+                    > .title {
+                        font-weight: 500;
+                        font-size: 18px;
+                        line-height: 26px;
+                        margin: 0 auto 24px 0;
+                    }
+
+                    .follow-system-theme-wrapper {
+                        margin-bottom: 10px;
+                        .tip {
+                            color: var(--color-text-3);
+                            margin-left: 22px;
+                        }
+                    }
+
+                    .about-link {
+                        height: 20px;
+                        line-height: 20px;
+                        margin: 0 0 16px;
+                        width: fit-content;
+                        font-size: 14px;
+                        font-weight: 400;
+                        color: #165dff;
+                        cursor: pointer;
+                        animation: all 0.2s;
+
+                        &:hover {
+                            color: #3370ff;
+                        }
+                    }
+                }
+
+                .setting-section {
+                    .form-item {
+                        .title {
+                            margin-bottom: 8px;
+                        }
+                    }
+
+                    .theme-card-wrapper {
+                        display: flex;
+                        margin-top: 16px;
+
+                        .theme-card {
+                            cursor: pointer;
+                            display: flex;
+                            flex-direction: column;
+                            width: 220px;
+                            height: 120px;
+                            border: 1px solid var(--color-border);
+                            overflow: hidden;
+                            border-radius: 8px;
+                            margin-right: 20px;
+
+                            .body {
+                                flex: 1;
+                            }
+
+                            .footer {
+                                border-top: 1px solid var(--color-border);
+                                display: flex;
+                                align-items: center;
+                                padding: 6px 10px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .update-setting-section {
+            // 检查更新按钮
+            .check-update-button {
+                height: 24px;
+                padding: 0px 10px;
+            }
+
+            .software-update-header {
+                display: flex;
+                align-items: center;
+                height: 30px;
+
+                .actions {
+                    margin-left: 15px;
+                }
+            }
+
+            .changelog-wrapper {
+                margin-top: 20px;
+
+                .changelog-title {
+                    font-weight: normal;
+                }
+
+                .changelog {
+                    color: #8f959e;
+                    margin-top: 4px;
+                }
+            }
+        }
+    }
+}

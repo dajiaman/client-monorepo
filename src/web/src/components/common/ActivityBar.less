@@ -1,0 +1,53 @@
+.activitybar {
+    background-color: var(--color-bg-2);
+    height: 100%;
+    border-right: 1px solid var(--color-border);
+
+    .content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+}
+
+.action-bar {
+    .actions-container {
+        margin: 0 auto;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+    }
+
+    .action-item {
+        display: block;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+    }
+
+    &.vertical {
+        .actions-container {
+            display: inline-block;
+        }
+
+        .action-item {
+            display: block;
+        }
+    }
+
+    .action-label {
+        font-size: 14px;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        overflow: hidden;
+        width: 100%;
+        height: 52px;
+        margin-right: 0;
+        box-sizing: border-box;
+    }
+}
