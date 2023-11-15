@@ -37,7 +37,7 @@ const viewsService = new ViewsService();
 app.once("ready", () => {
 	console.log("Hello from Electron!");
 	const preloadPath = path.join(__dirname, "./preload.js");
-	console.log("preloadPath: ", preloadPath);
+	// console.log("preloadPath: ", preloadPath);
 
 	// Create a new window
 	const window = new BrowserWindow({
@@ -47,19 +47,18 @@ app.once("ready", () => {
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
-			preload: preloadPath
+			preload: preloadPath,
 		},
 	});
 	// @ts-ignore
 	global.window = window;
 
-	// if (process.env.NODE_ENV === "development") {
-	//   window.loadURL(`http://localhost:3001`);
-	// } else {
-	//   window.loadURL(`file://${__dirname}/../../index.html`);
-	// }
+	if (process.env.NODE_ENV === "development") {
+		window.loadURL(`http://localhost:3001`);
+	} else {
+		window.loadURL(`file://${path.resolve(__dirname, "./web/index.html")}`);
+	}
 
-	window.loadURL(`file://${path.resolve(__dirname, "./web/index.html")}`);
 	window.webContents.openDevTools();
 
 	window.once("ready-to-show", () => {
@@ -73,12 +72,19 @@ app.once("ready", () => {
 			viewsService.hideAllViews();
 		}
 
+		const preloadPath = path.join(
+			__dirname,
+			"../../../dist/business/preloads/telegram/index.js"
+		);
+		console.log("preloadPath: ", preloadPath);
+
 		const { sessionId } = arg;
 		viewsService.openView(sessionId, `https://web.telegram.org/a/`, {
 			webPreferences: {
 				nodeIntegration: false,
 				// contextIsolation: false,
 				javascript: true,
+				preload: preloadPath,
 			},
 		});
 
