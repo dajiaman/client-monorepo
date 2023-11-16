@@ -2,53 +2,62 @@ const { defineConfig } = require("@rspack/cli");
 const path = require("path");
 
 const mode =
-	process.env.NODE_ENV === "development" ? "development" : "production";
+  process.env.NODE_ENV === "development" ? "development" : "production";
 const isDev = mode === "development";
 
 /** @type {import('@rspack/cli').Configuration} */
 const configRoot = defineConfig(() => {
-	return {
-		target: ["electron-preload"],
-		context: __dirname,
-		watch: true,
-		mode: mode,
-		entry: {
-			telegram: "./src/telegram/index.ts",
-			whatsapp: "./src/whatsapp/index.ts",
-		},
-		devtool: isDev ? "inline-source-map" : "source-map",
-		node: {
-			global: true,
-		},
-		output: {
-			path: path.join(__dirname, "../../dist/business/preloads"),
-			filename: "[name]/index.js",
-			library: {
-				type: "umd",
-			},
-		},
-		externals: {
-			cld: "cld",
-		},
-		module: {
-			rules: [
-				{
-					test: /\.node$/,
-					use: [
-						{
-							loader: "node-loader",
-							options: {
-								name: "[path][name].[ext]",
-							},
-						},
-					],
-				},
-			],
-		},
-		resolve: {
-			modules: ["src", "node_modules"],
-		},
-	};
+  return {
+    target: ["electron-preload"],
+    context: __dirname,
+    watch: true,
+    mode: mode,
+    entry: {
+      telegram: "./src/telegram/index.ts",
+      whatsapp: "./src/whatsapp/index.ts",
+    },
+    devtool: isDev ? "inline-source-map" : "source-map",
+    node: {
+      global: true,
+    },
+    output: {
+      path: path.join(__dirname, "../../dist/business/preloads"),
+      filename: "[name]/index.js",
+      library: {
+        type: "umd",
+      },
+    },
+    externals: {
+      cld: "cld",
+    },
+    module: {
+      rules: [
+        {
+          test: /\.node$/,
+          use: [
+            {
+              loader: "node-loader",
+              options: {
+                name: "[path][name].[ext]",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    resolve: {
+      modules: ["src", "node_modules"],
+    },
+    cache: false,
+    builtins: {
+      treeShaking: true,
+      define: {
+        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+        "process.env.APP_ENV": JSON.stringify(process.env.APP_ENV),
+        "process.env.IS_ELECTRON_BUILD": true,
+      },
+    },
+  };
 });
 
 module.exports = configRoot;

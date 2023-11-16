@@ -16,11 +16,21 @@ export class ViewsService {
 
     const createdView = new CodeView(name, url, options);
     this.views.set(name, createdView);
-    createdView.once("destroyed", () => {
+    createdView.on("destroy", () => {
+      console.log(`view ${createdView?.name} destroyed`);
       this.views.delete(name);
+      console.log("views count:", this.getViewCount());
     });
 
     return createdView;
+  }
+
+  /**
+   * 关闭所有的browserView
+   */
+  removeAllViews() {
+    this.views.forEach((view) => view?.destroyView());
+    this.views.clear();
   }
 
   getViewByName(name: string): CodeView | undefined {
@@ -31,6 +41,9 @@ export class ViewsService {
     return Array.from(this.views.values());
   }
 
+  /**
+   * 隐藏所有的browserView
+   */
   hideAllViews() {
     this.views.forEach((view) => view.hideView());
   }

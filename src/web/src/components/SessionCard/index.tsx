@@ -1,4 +1,4 @@
-import { Avatar, Button, Input } from "@arco-design/web-react";
+import { Avatar, Button, Input, Message } from "@arco-design/web-react";
 import { debounce } from "lodash-es";
 import { useState } from "react";
 import "./index.less";
@@ -96,15 +96,19 @@ const SessionCard: React.FC<StateProps> = ({
           </Button>
         )}
 
-        {/* <Button
+        <Button
           type="text"
           onClick={(e) => {
             e.preventDefault();
+            if (session.active) {
+              Message.error("请先关闭会话");
+              return;
+            }
             removeSession(session);
           }}
         >
           删除
-        </Button> */}
+        </Button>
       </div>
       <div className="session-card-body">
         <div className="remark-wrapper">

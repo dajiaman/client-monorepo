@@ -6,19 +6,39 @@ export class CodeWindow {
     return this._window;
   }
 
+  private _id: number;
+  get id(): number {
+    return this._id;
+  }
+
+  private _lastFocusTime = -1;
+  get lastFocusTime(): number {
+    return this._lastFocusTime;
+  }
+
+  private readyState = ReadyState.NONE;
+
   constructor(url: string, options: Electron.BrowserWindowConstructorOptions) {
     const window = new BrowserWindow(options);
 
     window.loadURL(url);
     this._window = window;
+    this._id = this._window.id;
 
-    this.handleEvents();
+    this._lastFocusTime = Date.now();
+
+    this.registerListeners();
   }
 
   /**
    * Handle events
    */
-  handleEvents() {
+  registerListeners() {
+    // Window error conditions to handle
+    this._window.on("unresponsive", () => {
+      // this.onWindowError(WindowError.UNRESPONSIVE);
+    });
+
     this._window.once("ready-to-show", () => {
       this._window.show();
     });
@@ -27,4 +47,29 @@ export class CodeWindow {
 
     this._window.webContents.on("did-finish-load", () => {});
   }
+
+  private async destroyWindow() {
+    this._window?.destroy();
+  }
+}
+
+const enum ReadyState {
+  /**
+   * This window has not loaded anything yet
+   * and this is the initial state of every
+   * window.
+   */
+  NONE,
+
+  /**
+   * This window is navigating, either for the
+   * first time or subsequent times.
+   */
+  NAVIGATING,
+
+  /**
+   * This window has finished loading and is ready
+   * to forward IPC requests to the web contents.
+   */
+  READY,
 }

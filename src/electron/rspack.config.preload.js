@@ -30,6 +30,14 @@ const configRoot = {
   resolve: {
     modules: ["src", "node_modules"],
   },
+  builtins: {
+    treeShaking: true,
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(NODE_ENV),
+      "process.env.APP_ENV": JSON.stringify(APP_ENV),
+      "process.env.IS_ELECTRON_BUILD": true,
+    },
+  },
 };
 
 module.exports = configRoot;

@@ -4,11 +4,11 @@ import SessionListBar from "../../components/SessionListBar";
 import { createSelectors } from "../../stores";
 import useSizeStore from "../../stores/size";
 import { useEffect, useRef, useState } from "react";
-
 import classNames from "classnames";
 import { TITLEBAR_HEIGHT } from "../../config";
 import "./platform.less";
-import { useToggle } from "ahooks";
+import { useToggle, useUpdateEffect } from "ahooks";
+import useSessionStore from "../../stores/session";
 
 /**
  * 平台会话列表页面
@@ -21,9 +21,12 @@ const Platform = () => {
     searchParams.get("platformName") || ""
   );
 
-  //  选中会话id, 用于右侧面板展示
-  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const selectedSessionId =
+    createSelectors(useSessionStore).use.selectedSessionId();
+  const setSelectedSessionId =
+    createSelectors(useSessionStore).use.setSelectedSessionId();
 
+  // 更新选中的会话id
   const updateSelectedSessionId = (sessionId: string) => {
     if (selectedSessionId !== sessionId) {
       selectedSessionIdChange(selectedSessionId, sessionId);
@@ -32,11 +35,19 @@ const Platform = () => {
     setSelectedSessionId(sessionId);
   };
 
+  // 选中的会话id变化
   const selectedSessionIdChange = (oldValue: string, newValue: string) => {
-    console.log("selectedSessionIdChange:", oldValue, newValue);
-    if(oldValue === newValue) {
+    if (oldValue === newValue) {
+      // no change
       return;
     }
+
+    console.log("selectedSessionIdChange:", oldValue, newValue);
+
+    if (!newValue) {
+      return;
+    }
+
     (window as any)?.vscode?.ipcRenderer?.invoke("show-browser-view", {
       sessionId: newValue,
     });
@@ -64,6 +75,25 @@ const Platform = () => {
   // 右侧面板折叠
   const [rightPanelCollapsed, { toggle: rightPanelToggleCollapsed }] =
     useToggle<boolean>(false);
+
+  useUpdateEffect(() => {
+    if (appName) {
+      console.log("appName", appName, "selectedSessionId", selectedSessionId);
+      // 是否需要隐藏所有的browser-view
+      const notAllHidden =
+        selectedSessionId && selectedSessionId.indexOf(appName) > -1;
+
+      if (notAllHidden) {
+        // 显示指定的browser-view
+        (window as any)?.vscode?.ipcRenderer?.invoke("show-browser-view", {
+          sessionId: selectedSessionId,
+        });
+      } else {
+        // 先隐藏所有的browser-view
+        (window as any)?.vscode?.ipcRenderer?.invoke("hide-all-browser-view");
+      }
+    }
+  }, [appName]);
 
   return (
     <div className="platform-page">

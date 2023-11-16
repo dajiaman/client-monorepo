@@ -1,5 +1,4 @@
-console.log("telegram preload start");
-import { Subject } from "rxjs";
+console.log("telegram preload start", process.env.IS_ELECTRON_BUILD);
 
 if (!window["interceptLoader"]) {
   (window as any)["interceptLoader"] = function (
@@ -15,23 +14,6 @@ if (!window["interceptLoader"]) {
 
 console.log("window.interceptLoader", (window as any).interceptLoader);
 (window as any).sessionTranslationSetting = {};
-
-// 登录observable
-const authStateObservable$ = new Subject();
-authStateObservable$.subscribe((hasLogin) => {
-  console.log("hasLogin:", hasLogin);
-  if (hasLogin) {
-  } else {
-  }
-});
-
-setTimeout(() => {
-  authStateObservable$.next(false);
-
-  setTimeout(() => {
-    authStateObservable$.next(true);
-  }, 1000);
-}, 1000);
 
 class App {
   doms = new WeakSet();

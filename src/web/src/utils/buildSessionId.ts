@@ -4,10 +4,10 @@ import { customAlphabet } from "nanoid";
  * 生成sessionId
  * @returns
  */
-export function buildSessionId(): string {
+export function buildSessionId(appName: string): string {
   const nanoid = customAlphabet(
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
     16
   );
-  return nanoid();
+  return appName + '_' + nanoid();
 }

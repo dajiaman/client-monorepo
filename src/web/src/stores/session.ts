@@ -1,3 +1,4 @@
+import { reject } from "lodash-es";
 import { SessionAppParam } from "../types/session";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -5,13 +6,18 @@ import indexdbStorage from "./indexdbStorage";
 import { buildSessionId } from "../utils/buildSessionId";
 import { AppNameEnum } from "../config/app.config";
 import useAppStore from "./app";
+import { IS_ELECTRON_BUILD } from "../config";
 
 interface SessionStoreState {
   sessionList: Record<string, SessionAppParam[]>;
+  // 选中的会话id
+  selectedSessionId: string;
+
+  setSelectedSessionId: (sessionId: string) => void;
 
   addSession: (appName: string) => Promise<boolean>;
-  resetAllSesssion: () => void;
-  removeSession: (appName: string, sessionId: string) => void;
+  resetAllSesssion: () => Promise<any>;
+  removeSession: (appName: string, sessionId: string) => Promise<boolean>;
   startSession: (appName: string, sessionId: string) => Promise<boolean>;
   closeSession: (appName: string, sessionId: string) => Promise<boolean>;
   updateSessionRemark: (
@@ -30,12 +36,19 @@ const useSessionStore = create<SessionStoreState>()(
       (set) => ({
         // 会话列表
         sessionList: {},
+        selectedSessionId: "",
+        setSelectedSessionId: (sessionId: string) => {
+          set(() => {
+            return {
+              selectedSessionId: sessionId,
+            };
+          });
+        },
 
         // 添加新会话
         addSession: (appName: string) => {
           set((state) => {
             const sessionList = state.sessionList[appName] || [];
-
             const appPlatform = useAppStore
               .getState()
               .availableApps.find((app) => {
@@ -43,7 +56,7 @@ const useSessionStore = create<SessionStoreState>()(
               });
 
             const session: SessionAppParam = {
-              sessionId: buildSessionId(),
+              sessionId: buildSessionId(appName),
               appName: appName as AppNameEnum,
               // 登录后才会有
               user_info_child_channel_id: null,
@@ -78,12 +91,11 @@ const useSessionStore = create<SessionStoreState>()(
               },
             };
           });
-
           return Promise.resolve(true);
         },
 
         // 删除会话
-        removeSession: (appName: string, sessionId: string) => {
+        removeSession: async (appName: string, sessionId: string) => {
           set((state) => {
             const sessionList = state.sessionList[appName] || [];
             const index = sessionList.findIndex(
@@ -99,92 +111,106 @@ const useSessionStore = create<SessionStoreState>()(
               },
             };
           });
+
+          return true;
         },
 
         // 启动会话
-        startSession: (appName: string, sessionId: string) => {
-          return new Promise((resolve, reject) => {
-            // @ts-ignore
-            window?.vscode?.ipcRenderer
-              ?.invoke("open-browser-view", {
+        startSession: async (appName: string, sessionId: string) => {
+          if (IS_ELECTRON_BUILD) {
+            await (window as any)?.vscode?.ipcRenderer?.invoke(
+              "open-browser-view",
+              {
                 sessionId: sessionId,
-              })
-              .then(() => {
-                set((state) => {
-                  const sessionList = state.sessionList[appName] || [];
-                  const index = sessionList.findIndex(
-                    (item) => item.sessionId === sessionId
-                  );
-                  if (index > -1) {
-                    // 更新启动时间
-                    sessionList[index].startUpTime = new Date().getTime();
-                    sessionList[index].active = true;
-                  }
-                  return {
-                    sessionList: {
-                      ...state.sessionList,
-                      [appName]: sessionList,
-                    },
-                  };
-                });
-                resolve(true);
-              })
-              .catch((err: any) => {
-                reject(err);
-              });
+              }
+            );
+          }
+
+          set((state) => {
+            const sessionList = state.sessionList[appName] || [];
+            const index = sessionList.findIndex(
+              (item) => item.sessionId === sessionId
+            );
+            if (index > -1) {
+              // 更新启动时间
+              sessionList[index].startUpTime = new Date().getTime();
+              sessionList[index].active = true;
+            }
+            return {
+              sessionList: {
+                ...state.sessionList,
+                [appName]: sessionList,
+              },
+            };
           });
+
+          return true;
         },
 
         // 关闭所有会话
-        resetAllSesssion: () => {
-          return new Promise((resolve) => {
-            set((state) => {
-              for (const key in state.sessionList) {
-                state.sessionList[key].map((item) => {
-                  item.active = false;
-                  item.isLoaded = false;
-                  item.isLoadingView = false;
-                  item.isSplit = false;
-                  item.isCollapsed = false;
-                  item.userInfo.unreadCount = 0;
-                  item.userInfo.online = false;
-                  item.user_info_child_channel_id = null;
-                });
-              }
-              return {
-                sessionList: state.sessionList,
-              };
-            });
+        resetAllSesssion: async (): Promise<boolean> => {
+          if (IS_ELECTRON_BUILD) {
+            await (window as any)?.vscode?.ipcRenderer?.invoke(
+              "close-all-browser-view"
+            );
+          }
+
+          set((state) => {
+            for (const key in state.sessionList) {
+              state.sessionList[key].map((item) => {
+                item.active = false;
+                item.isLoaded = false;
+                item.isLoadingView = false;
+                item.isSplit = false;
+                item.isCollapsed = false;
+                item.userInfo.unreadCount = 0;
+                item.userInfo.online = false;
+                item.user_info_child_channel_id = null;
+              });
+            }
+            return {
+              sessionList: state.sessionList,
+            };
           });
+
+          return true;
         },
 
         // 关闭会话
-        closeSession: (appName: string, sessionId: string) => {
-          return new Promise((resolve) => {
-            set((state) => {
-              const sessionList = state.sessionList[appName] || [];
-              const index = sessionList.findIndex(
-                (item) => item.sessionId === sessionId
-              );
-              if (index > -1) {
-                sessionList[index].active = false;
-                sessionList[index].isLoaded = false;
-                sessionList[index].isLoadingView = false;
-                sessionList[index].isSplit = false;
-                sessionList[index].isCollapsed = false;
-                sessionList[index].userInfo.unreadCount = 0;
-                sessionList[index].userInfo.online = false;
-                sessionList[index].user_info_child_channel_id = null;
+        closeSession: async (appName: string, sessionId: string) => {
+          if (IS_ELECTRON_BUILD) {
+            await (window as any)?.vscode?.ipcRenderer?.invoke(
+              "close-browser-view",
+              {
+                sessionId: sessionId,
               }
-              return {
-                sessionList: {
-                  ...state.sessionList,
-                  [appName]: sessionList,
-                },
-              };
-            });
-            resolve(true);
+            );
+          }
+
+          set((state) => {
+            const sessionList = state.sessionList[appName] || [];
+            const index = sessionList.findIndex(
+              (item) => item.sessionId === sessionId
+            );
+            if (index > -1) {
+              sessionList[index].active = false;
+              sessionList[index].isLoaded = false;
+              sessionList[index].isLoadingView = false;
+              sessionList[index].isSplit = false;
+              sessionList[index].isCollapsed = false;
+              sessionList[index].userInfo.unreadCount = 0;
+              sessionList[index].userInfo.online = false;
+              sessionList[index].user_info_child_channel_id = null;
+            }
+            return {
+              sessionList: {
+                ...state.sessionList,
+                [appName]: sessionList,
+              },
+            };
           });
+
+          return true;
         },
 
         // 更新会话备注

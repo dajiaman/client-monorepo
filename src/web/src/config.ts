@@ -5,7 +5,7 @@ export const IS_TEST = process.env.APP_ENV === "test";
 export const IS_PERF = process.env.APP_ENV === "perf";
 // beta环境
 export const IS_BETA = process.env.APP_ENV === "staging";
-export const IS_ELECTRON_BUILD = process.env.IS_ELECTRON_BUILD;
+export const IS_ELECTRON_BUILD = (window as any)?.process?.type === "renderer";
 
 export const IS_DEV = process.env.NODE_ENV === "development";
 

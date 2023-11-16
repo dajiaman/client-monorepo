@@ -1,0 +1,26 @@
+update
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch main
+# Your branch is up to date with 'origin/main'.
+#
+# Changes to be committed:
+#	modified:   package.json
+#	modified:   pnpm-lock.yaml
+#	modified:   src/business/rspack.config.js
+#	modified:   src/business/src/telegram/index.ts
+#	modified:   src/electron/rspack.config.js
+#	modified:   src/electron/rspack.config.preload.js
+#	modified:   src/electron/src/codeView.ts
+#	modified:   src/electron/src/codeWindow.ts
+#	modified:   src/electron/src/index.ts
+#	modified:   src/electron/src/viewsService.ts
+#	modified:   src/web/src/components/SessionCard/index.tsx
+#	modified:   src/web/src/components/SessionListBar/index.tsx
+#	modified:   src/web/src/config.ts
+#	modified:   src/web/src/pages/platform/platform.tsx
+#	modified:   src/web/src/stores/session.ts
+#	modified:   src/web/src/utils/buildSessionId.ts
+#	new file:   src/web/typings/globals-product.d.ts
+#

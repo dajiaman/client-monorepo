@@ -70,34 +70,53 @@ const SessionListBar: FC<StateProps> = ({
 
   // 启动session
   const startSessionHandler = async (session: SessionAppParam) => {
+    Message.clear();
     Message.info("模拟启动");
     const sessionId = session.sessionId;
     console.log("startSessionHandler", session);
     await startSession(appName, session.sessionId);
+    Message.clear();
     updateSelectedSessionId(sessionId);
   };
 
-  // 关闭session
+  /**
+   * 关闭session
+   * @param session
+   */
   const closeSessionHandler = async (session: SessionAppParam) => {
+    Message.clear();
     Message.info("模拟关闭");
     console.log("closeSessionHandler", session);
+    await closeSession(appName, session.sessionId);
     resetSelectedSessionId();
-    return closeSession(appName, session.sessionId);
   };
 
-  // 删除session
-  const removeSessionHandler = (session: SessionAppParam) => {
+  /**
+   * 删除session
+   * @param session
+   * @returns
+   */
+  const removeSessionHandler = async (session: SessionAppParam) => {
     console.log("removeSessionHandler", session);
+    await removeSession(appName, session.sessionId);
     resetSelectedSessionId();
-    return removeSession(appName, session.sessionId);
   };
 
-  // 更新备注
+  /**
+   * 更新备注
+   * @param session
+   * @param remark
+   */
   const updateRemarkHandler = (session: SessionAppParam, remark: string) => {
     console.log("updateRemarkHandler", session, remark);
     updateSessionRemark(appName, session.sessionId, remark);
   };
 
+  /**
+   * 会话点击
+   * @param session
+   * @returns
+   */
   const sessionCardClick = (session: SessionAppParam) => {
     if (session.sessionId === selectedSessionId) {
       return;
