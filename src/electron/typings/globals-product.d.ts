@@ -1,4 +1,6 @@
 declare global {
+  var window: Electron.BrowserWindow;
+
   /**
    * @deprecated You MUST use `IProductService` whenever possible.
    */

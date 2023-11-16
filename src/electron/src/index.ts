@@ -1,47 +1,54 @@
 import { BrowserWindow, app, ipcMain, protocol } from "electron";
 import { ViewsService } from "./viewsService";
 import path from "node:path";
+import { WindowsService } from "./windowsService";
 
 // @ts-ignore
 global.globalObject = {
   selectedSessionId: "",
 };
 
-// 禁用渲染器的后台运行,可以减少后台渲染进程的资源占用
+// 防止chrome 降低隐藏的渲染进程的优先级， 全局有效
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: "https",
-    privileges: {
-      secure: false,
-      bypassCSP: true,
-      corsEnabled: true,
-    },
-  },
-]);
+// protocol.registerSchemesAsPrivileged([
+//   {
+//     scheme: "https",
+//     privileges: {
+//       secure: false,
+//       bypassCSP: true,
+//       corsEnabled: true,
+//     },
+//   },
+// ]);
 
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: "http",
-    privileges: {
-      secure: true,
-      standard: true,
-      bypassCSP: true,
-      corsEnabled: true,
-    },
-  },
-]);
+// protocol.registerSchemesAsPrivileged([
+//   {
+//     scheme: "http",
+//     privileges: {
+//       secure: true,
+//       standard: true,
+//       bypassCSP: true,
+//       corsEnabled: true,
+//     },
+//   },
+// ]);
 
+const windowsService = new WindowsService();
 const viewsService = new ViewsService();
 
-app.once("ready", () => {
+app.once("ready", async () => {
   console.log("Hello from Electron!");
   const preloadPath = path.join(__dirname, "./preload.js");
   // console.log("preloadPath: ", preloadPath);
 
+  const loadUrl =
+    process.env.NODE_ENV === "development"
+      ? `http://localhost:3001`
+      : `file://${path.resolve(__dirname, "./web/index.html")}`;
+
   // Create a new window
-  const window = new BrowserWindow({
+  const createdWindow = await windowsService.openWindow("main", loadUrl, {
     width: 1280,
     height: 800,
     webPreferences: {
@@ -50,25 +57,18 @@ app.once("ready", () => {
       preload: preloadPath,
     },
   });
-  // @ts-ignore
-  global.window = window;
 
-  if (process.env.NODE_ENV === "development") {
-    window.loadURL(`http://localhost:3001`);
-  } else {
-    window.loadURL(`file://${path.resolve(__dirname, "./web/index.html")}`);
-  }
+  global.window = createdWindow.window;
 
-  window.webContents.openDevTools();
-
-  window.on("resize", () => {
+  // resize
+  createdWindow?.window?.on("resize", () => {
+    if (viewsService?.getViewCount() === 0) {
+      return;
+    }
     viewsService.getAllViews().forEach((view) => {
+      // 尺寸变化时，重新计算
       view.fitWindow();
     });
-  });
-
-  window.once("ready-to-show", () => {
-    console.log("ready-to-show");
   });
 
   // 打开新的browserView
@@ -92,18 +92,14 @@ app.once("ready", () => {
     );
 
     console.log("preloadPath: ", preloadPath);
-    viewsService.openView(sessionId, `https://web.telegram.org/a/`, {
+    await viewsService.openView(sessionId, `https://web.telegram.org/a/`, {
       webPreferences: {
-        nodeIntegration: true,
-        // contextIsolation: false,
+        nodeIntegration: false,
         javascript: true,
         // preload: preloadPath,
       },
     });
-
-    if (viewsService.getViewByName(sessionId)) {
-      window.addBrowserView(viewsService.getViewByName(sessionId)?.view!);
-    }
+    return true;
   });
 
   /**
@@ -117,11 +113,7 @@ app.once("ready", () => {
       return;
     }
 
-    if (viewsService.getViewCount() > 0) {
-      viewsService.hideAllViews();
-    }
-
-    viewsService.getViewByName(sessionId)?.fitWindow();
+    viewsService.switchTabWithId(sessionId);
   });
 
   /**
@@ -130,7 +122,7 @@ app.once("ready", () => {
   ipcMain.handle("close-browser-view", async (_e, args) => {
     console.log("close browser view", args);
     const { sessionId } = args;
-    viewsService.getViewByName(sessionId)?.destroyView();
+    viewsService.closeTab(sessionId);
     return true;
   });
 
@@ -139,9 +131,7 @@ app.once("ready", () => {
    */
   ipcMain.handle("close-all-browser-view", async (_e) => {
     console.log("close-all-browser-view");
-    viewsService.getAllViews().forEach((view) => {
-      view.destroyView();
-    });
+    viewsService.closeAllTabs();
     return true;
   });
 
@@ -163,7 +153,7 @@ app.once("ready", () => {
     console.log("remove-view-session", args);
     const { sessionId } = args;
     // 1. 先销毁browserView
-    viewsService.getViewByName(sessionId)?.destroyView();
+    viewsService.closeTab(sessionId);
     return true;
   });
 });

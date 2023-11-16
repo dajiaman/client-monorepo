@@ -1,4 +1,4 @@
-import { BrowserView, dialog } from "electron";
+import { BrowserView, BrowserWindow, dialog } from "electron";
 import EventEmitter from "events";
 
 export class CodeView extends EventEmitter {
@@ -7,9 +7,9 @@ export class CodeView extends EventEmitter {
     return this._view;
   }
 
-  private _name: string;
-  get name() {
-    return this._name;
+  private _containerId: string;
+  get containerId() {
+    return this._containerId;
   }
 
   private _id: number;
@@ -25,15 +25,15 @@ export class CodeView extends EventEmitter {
   private visibilityState = VisibilityState.NONE;
 
   constructor(
-    name: string,
+    containerId: string,
     url: string,
     options: Electron.BrowserViewConstructorOptions
   ) {
     super();
-    this._name = name;
+    this._containerId = containerId;
 
     // session partition
-    const partitionString: string = `persist:${name}`;
+    const partitionString: string = `persist:${containerId}`;
 
     const view = new BrowserView({
       webPreferences: {
@@ -48,7 +48,16 @@ export class CodeView extends EventEmitter {
     this.fitWindow();
 
     view.webContents.loadURL(url);
+    view.webContents.executeJavaScript(`
+      window.name = "${containerId}";
+      console.log(name);
 
+      document.addEventListener("visibilitychange", () => {
+        console.log("visibilitychange", document.visibilityState);
+      });
+    `);
+
+    (global?.window as BrowserWindow)?.setBrowserView(view);
     this.registerListeners();
   }
 
@@ -73,13 +82,10 @@ export class CodeView extends EventEmitter {
       console.log("content-bounds-updated", bounds);
     });
 
+    // 销毁事件
     this._view?.webContents?.once("destroyed", () => {
-      console.log("destroyed");
+      console.log("webContents destroyed");
       this.emit("destroyed");
-    });
-
-    this._view?.webContents?.on("ipc-message", () => {
-      console.log("ipc-message");
     });
 
     this._view?.webContents.on("render-process-gone", (_event, details) => {
@@ -114,10 +120,9 @@ export class CodeView extends EventEmitter {
   }
 
   fitWindow() {
-    // @ts-ignore
-    const clientWidth = global?.window.getContentBounds().width;
-    // @ts-ignore
-    const clientHeight = global?.window.getContentBounds().height;
+    console.log("fitWindow");
+    const clientWidth = global?.window?.getContentBounds().width;
+    const clientHeight = global?.window?.getContentBounds().height;
     this._view.setBounds({
       x: 302,
       y: 0,
@@ -133,21 +138,29 @@ export class CodeView extends EventEmitter {
     this.visibilityState = VisibilityState.VISIBLE;
   }
 
+  showView() {
+    if (this.view?.webContents?.isDestroyed()) {
+      return;
+    }
+    this.fitWindow();
+    (global?.window as BrowserWindow)?.addBrowserView(this._view);
+    (global?.window as BrowserWindow)?.setTopBrowserView(this._view);
+  }
+
   hideView() {
+    if (this.view?.webContents?.isDestroyed()) {
+      return;
+    }
     if (this.visibilityState === VisibilityState.HIDDEN) {
       return;
     }
-    console.log("hideView", this._name);
-    this._view.setBounds({
-      x: -100,
-      y: -100,
-      width: 1,
-      height: 1,
-    });
+    console.log("hideView", this.containerId);
+    (global?.window as BrowserWindow)?.removeBrowserView(this._view);
     this.visibilityState = VisibilityState.HIDDEN;
   }
 
   async destroyView(): Promise<void> {
+    (global?.window as BrowserWindow)?.removeBrowserView(this._view);
     this._view?.webContents?.close();
     // @ts-ignore
     this._view?.webContents?.destroy();

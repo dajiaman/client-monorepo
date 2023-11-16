@@ -16,7 +16,7 @@ const configRoot = defineConfig(() => {
       telegram: "./src/telegram/index.ts",
       whatsapp: "./src/whatsapp/index.ts",
     },
-    devtool: isDev ? "inline-source-map" : "source-map",
+    devtool: isDev ? "inline-source-map" : false,
     node: {
       global: true,
     },

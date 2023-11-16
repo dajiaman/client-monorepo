@@ -1,9 +1,15 @@
 import { BrowserWindow } from "electron";
+import { ViewsService } from "./viewsService";
 
 export class CodeWindow {
   private _window: Electron.BrowserWindow;
   get window() {
     return this._window;
+  }
+
+  private _winId: string;
+  get winId() {
+    return this._winId;
   }
 
   private _id: number;
@@ -18,7 +24,14 @@ export class CodeWindow {
 
   private readyState = ReadyState.NONE;
 
-  constructor(url: string, options: Electron.BrowserWindowConstructorOptions) {
+  private viewsService: ViewsService = new ViewsService();
+
+  constructor(
+    winId: string,
+    url: string,
+    options: Electron.BrowserWindowConstructorOptions
+  ) {
+    this._winId = winId;
     const window = new BrowserWindow(options);
 
     window.loadURL(url);
@@ -41,11 +54,15 @@ export class CodeWindow {
 
     this._window.once("ready-to-show", () => {
       this._window.show();
+
+      this._window.webContents.openDevTools();
     });
 
     this._window.on("closed", () => {});
 
     this._window.webContents.on("did-finish-load", () => {});
+
+
   }
 
   private async destroyWindow() {
