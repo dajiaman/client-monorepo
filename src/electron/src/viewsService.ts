@@ -34,19 +34,22 @@ export class ViewsService extends EventEmitter {
     const createdView = new CodeView(containerId, url, options);
     // 加入到map中
     this.views.set(containerId, createdView);
+    // 销毁browserView
     createdView.once("destroyed", () => {
       console.log(`view ${createdView?.containerId} destroyed`);
       this.views.delete(containerId);
       console.log("views count:", this.getViewCount());
     });
 
+    // 重启browserView
     createdView.once("relauch", async () => {
-      // 先销毁
+      // 先销毁browserView
       await this.closeTab(containerId);
-      // 等待2s
+      // 尝试等待2s
       await sleep(2000);
-      // 重新创建
+      // 再重新创建一个browserView
       await this.openView(containerId, url, options);
+      // 显示browserView
       this.switchTabWithId(containerId);
     });
 
