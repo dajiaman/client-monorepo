@@ -1,4 +1,4 @@
-import { BrowserWindow, app, ipcMain, protocol } from "electron";
+import { app, dialog, ipcMain, protocol } from "electron";
 import { ViewsService } from "./viewsService";
 import path from "node:path";
 import { WindowsService } from "./windowsService";
@@ -8,36 +8,62 @@ global.globalObject = {
   selectedSessionId: "",
 };
 
+// app.commandLine.appendSwitch("no-sandbox");
+// app.commandLine.appendSwitch("disable-gpu-sandbox");
+
+app.commandLine.appendSwitch("js-flags", "--expose-gc");
 // 防止chrome 降低隐藏的渲染进程的优先级， 全局有效
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 
-// protocol.registerSchemesAsPrivileged([
-//   {
-//     scheme: "https",
-//     privileges: {
-//       secure: false,
-//       bypassCSP: true,
-//       corsEnabled: true,
-//     },
-//   },
-// ]);
-
-// protocol.registerSchemesAsPrivileged([
-//   {
-//     scheme: "http",
-//     privileges: {
-//       secure: true,
-//       standard: true,
-//       bypassCSP: true,
-//       corsEnabled: true,
-//     },
-//   },
-// ]);
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "http",
+    privileges: {
+      secure: true,
+      standard: true,
+      bypassCSP: true,
+      corsEnabled: true,
+    },
+  },
+  {
+    scheme: "https",
+    privileges: {
+      secure: true,
+      standard: true,
+      bypassCSP: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 const windowsService = new WindowsService();
 const viewsService = new ViewsService();
 
 app.once("ready", async () => {
+  process.on("uncaughtException", (err) => {
+    const { message, stack } = err;
+    dialog.showErrorBox(
+      "Error",
+      "uncaughtException global: " + message + "\n" + stack
+    );
+  });
+
+  // unhandledRejection 事件
+  process.on("unhandledRejection", (err) => {
+    dialog.showErrorBox(
+      "Error",
+      "unhandledRejection global: " + err?.toString()
+    );
+  });
+
+  // 替代 gpu-process-crashed
+  app.on("child-process-gone", (event, details) => {
+    dialog.showErrorBox(
+      "Error",
+      "child-process-gone: " + JSON.stringify(details)
+    );
+  });
+
   console.log("Hello from Electron!");
   const preloadPath = path.join(__dirname, "./preload.js");
   // console.log("preloadPath: ", preloadPath);
@@ -92,11 +118,13 @@ app.once("ready", async () => {
     );
 
     console.log("preloadPath: ", preloadPath);
+    // browserView
     await viewsService.openView(sessionId, `https://web.telegram.org/a/`, {
       webPreferences: {
-        nodeIntegration: false,
+        nodeIntegration: process.env.NODE_ENV === "development" ? true : false,
         javascript: true,
-        // preload: preloadPath,
+        preload:
+          process.env.NODE_ENV === "development" ? preloadPath : undefined,
       },
     });
     return true;

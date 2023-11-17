@@ -17,12 +17,18 @@ gulp.task("default", function () {
     .pipe(gulp.dest(path.join(__dirname, "../../dist/business/preloads/")));
 });
 
+gulp.task("copy-loader", function () {
+  return gulp
+    .src(["src/loader.js"])
+    .pipe(gulp.dest(path.join(__dirname, "../../dist/business/")));
+});
+
 gulp.task("watch", function () {
   gulp.watch(
     ["src/**/*.ts"],
     {
       ignoreInitial: false,
     },
-    gulp.series("default")
+    gulp.series("default", "copy-loader")
   );
 });

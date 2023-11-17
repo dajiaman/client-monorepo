@@ -45,6 +45,9 @@ const configRoot = {
     }),
   ],
   resolve: {
+    alias: {
+      lib: path.resolve(__dirname, "../lib/src"),
+    },
     modules: ["src", "node_modules"],
   },
   cache: false,

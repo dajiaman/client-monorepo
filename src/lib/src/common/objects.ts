@@ -1,4 +1,4 @@
-import { isObject, isTypedArray } from "./type";
+import { isObject, isTypedArray, isUndefinedOrNull } from "./type";
 
 export function deepClone<T>(obj: T): T {
   if (!obj || typeof obj !== "object") {

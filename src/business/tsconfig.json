@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2015",
     "downlevelIteration": true,
-    "module": "commonjs",
+    "module": "amd",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true, //  启用装饰器
@@ -34,6 +34,11 @@
     "types": [
       "node",
     ],
+    "paths": {
+      "lib/*": [
+        "../lib/src/*"
+      ]
+    }
   },
   "include": [
     "./src/**/*.d.ts",

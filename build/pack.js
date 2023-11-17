@@ -1,3 +1,6 @@
+// Increase max listeners for event emitters
+require("events").EventEmitter.defaultMaxListeners = 100;
+
 const builder = require("electron-builder");
 const Platform = builder.Platform;
 const product = require("../product.json");
@@ -35,8 +38,6 @@ const buildOptions = {
   },
   nsis: {
     oneClick: true,
-    perMachine: true,
-    allowToChangeInstallationDirectory: false,
     deleteAppDataOnUninstall: false,
   },
   asar: false,

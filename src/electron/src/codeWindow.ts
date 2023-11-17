@@ -1,4 +1,4 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, dialog } from "electron";
 import { ViewsService } from "./viewsService";
 
 export class CodeWindow {
@@ -49,20 +49,21 @@ export class CodeWindow {
   registerListeners() {
     // Window error conditions to handle
     this._window.on("unresponsive", () => {
+      dialog.showErrorBox("Error:", "窗口无法响应");
       // this.onWindowError(WindowError.UNRESPONSIVE);
     });
 
     this._window.once("ready-to-show", () => {
       this._window.show();
 
-      this._window.webContents.openDevTools();
+      if (process.env.NODE_ENV === "development") {
+        this._window.webContents.openDevTools();
+      }
     });
 
     this._window.on("closed", () => {});
 
     this._window.webContents.on("did-finish-load", () => {});
-
-
   }
 
   private async destroyWindow() {
