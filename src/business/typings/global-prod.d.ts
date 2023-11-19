@@ -14,6 +14,8 @@ declare global {
     sessionTranslationSetting: Record<string, any>;
 
     _instance: any;
+
+    __modules: null | Record<string, any>;
   }
 }
 

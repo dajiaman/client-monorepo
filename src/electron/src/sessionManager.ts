@@ -7,10 +7,10 @@ export class SessionManager {
     this.session = session;
     this.platformName = platformName;
 
-    this.handleEvents();
+    this.registerListeners();
   }
 
-  handleEvents() {
+  registerListeners() {
     // 发送headers前，可以修改headers
     this.session?.webRequest.onBeforeSendHeaders(
       (
@@ -42,14 +42,17 @@ export class SessionManager {
 
         if (this.platformName === "telegram") {
           if (
-            requestUrl.indexOf("https://web.telegram.org/a") > -1 &&
+            requestUrl.indexOf("telegram") > -1 &&
             requestUrl.indexOf("main") > -1
           ) {
             callback({
-              redirectURL: requestUrl.replace(
-                "https://web.telegram.org/a/",
-                "http://da-image.oss-cn-beijing.aliyuncs.com/telegram/"
-              ),
+              redirectURL:
+                requestUrl.replace(
+                  "https://web.telegram.org/a/",
+                  "http://da-image.oss-cn-beijing.aliyuncs.com/telegram/"
+                ) +
+                "?v=" +
+                Date.now(),
             });
           }
         }

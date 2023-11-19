@@ -32,6 +32,13 @@ export class ViewsService extends EventEmitter {
     }
 
     const createdView = new CodeView(containerId, url, options);
+    try {
+      await createdView.startup(url);
+      // 成功加载后发送事件到渲染进程中，决定是否显示在window上
+    } catch (error) {
+      throw error;
+    }
+
     // 加入到map中
     this.views.set(containerId, createdView);
     // 销毁browserView
@@ -42,14 +49,16 @@ export class ViewsService extends EventEmitter {
     });
 
     // 重启browserView
-    createdView.once("relauch", async () => {
+    createdView.once("relaunch", async () => {
       // 先销毁browserView
       await this.closeTab(containerId);
       // 尝试等待2s
       await sleep(2000);
       // 再重新创建一个browserView
-      await this.openView(containerId, url, options);
-      // 显示browserView
+      const relaunchView = await this.openView(containerId, url, options);
+      relaunchView?.executeJavaScript(`
+        window["dontNeedMock"] = true;
+      `);
       this.switchTabWithId(containerId);
     });
 

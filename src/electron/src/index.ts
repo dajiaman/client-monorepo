@@ -2,6 +2,7 @@ import { app, dialog, ipcMain, protocol } from "electron";
 import { ViewsService } from "./viewsService";
 import path from "node:path";
 import { WindowsService } from "./windowsService";
+import { sleep } from "./utils";
 
 // @ts-ignore
 global.globalObject = {
@@ -11,7 +12,10 @@ global.globalObject = {
 // app.commandLine.appendSwitch("no-sandbox");
 // app.commandLine.appendSwitch("disable-gpu-sandbox");
 
-app.commandLine.appendSwitch("js-flags", "--expose-gc");
+app.commandLine.appendSwitch(
+  "js-flags",
+  "--expose-gc, --max-old-space-size=4096"
+);
 // 防止chrome 降低隐藏的渲染进程的优先级， 全局有效
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 
@@ -119,15 +123,35 @@ app.once("ready", async () => {
 
     console.log("preloadPath: ", preloadPath);
     // browserView
-    await viewsService.openView(sessionId, `https://web.telegram.org/a/`, {
-      webPreferences: {
-        nodeIntegration: process.env.NODE_ENV === "development" ? true : false,
-        javascript: true,
-        preload:
-          process.env.NODE_ENV === "development" ? preloadPath : undefined,
-      },
-    });
-    return true;
+    try {
+      const codeView = await viewsService.openView(
+        sessionId,
+        `https://web.telegram.org/a/`,
+        {
+          webPreferences: {
+            nodeIntegration:
+              process.env.NODE_ENV === "development" ? true : false,
+            javascript: true,
+            additionalArguments: [`--sessionId=${sessionId}`],
+            v8CacheOptions: "bypassHeatCheck",
+            enableWebSQL: false,
+            spellcheck: false,
+            autoplayPolicy: "user-gesture-required",
+            experimentalFeatures: false,
+            zoomFactor: 1,
+            contextIsolation: false,
+            webgl: false,
+            preload:
+              process.env.NODE_ENV === "development" ? preloadPath : undefined,
+          },
+        }
+      );
+
+      return codeView?.containerId;
+    } catch (error) {
+      console.log("open-browser-view error:", error);
+      throw error;
+    }
   });
 
   /**
@@ -171,6 +195,8 @@ app.once("ready", async () => {
     if (viewsService.getViewCount() > 0) {
       viewsService.hideAllViews();
     }
+
+    await sleep(100);
     return;
   });
 
@@ -181,7 +207,7 @@ app.once("ready", async () => {
     console.log("remove-view-session", args);
     const { sessionId } = args;
     // 1. 先销毁browserView
-    viewsService.closeTab(sessionId);
+    await viewsService.closeTab(sessionId);
     return true;
   });
 });

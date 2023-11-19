@@ -80,7 +80,7 @@ const SessionCard: React.FC<StateProps> = ({
         <div className="avatar-wrapper">
           <Avatar>A</Avatar>
         </div>
-        <div className="content">
+        <div className="session-card-header-meta">
           <div className="nickname">{session.sessionId}</div>
           <div className="username">{session.createTime}</div>
         </div>

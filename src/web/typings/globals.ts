@@ -17,3 +17,12 @@ const vscodeGlobal = (globalThis as any).vscode;
 export const ipcRenderer: IpcRenderer = vscodeGlobal.ipcRenderer;
 export const ipcMessagePort: IpcMessagePort = vscodeGlobal.ipcMessagePort;
 export const webFrame: WebFrame = vscodeGlobal.webFrame;
+
+declare global {
+  interface Window {
+    vscode: typeof vscodeGlobal;
+  }
+}
+
+// fake export to make global work
+export {};

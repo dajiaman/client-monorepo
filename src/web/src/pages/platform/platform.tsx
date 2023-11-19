@@ -7,8 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import classNames from "classnames";
 import { TITLEBAR_HEIGHT } from "../../config";
 import "./platform.less";
-import { useToggle, useUpdateEffect } from "ahooks";
+import { useMount, useToggle, useUpdateEffect } from "ahooks";
 import useSessionStore from "../../stores/session";
+import { IpcRenderer } from "../../../typings/electronTypes";
 
 /**
  * 平台会话列表页面
@@ -20,6 +21,14 @@ const Platform = () => {
   const [appName, setAppName] = useState<string>(
     searchParams.get("platformName") || ""
   );
+
+  useMount(() => {
+    if (appName && selectedSessionId) {
+      (window as any)?.vscode?.ipcRenderer?.invoke("show-browser-view", {
+        sessionId: selectedSessionId,
+      });
+    }
+  });
 
   const selectedSessionId =
     createSelectors(useSessionStore).use.selectedSessionId();
@@ -47,10 +56,6 @@ const Platform = () => {
     if (!newValue) {
       return;
     }
-
-    (window as any)?.vscode?.ipcRenderer?.invoke("show-browser-view", {
-      sessionId: newValue,
-    });
   };
 
   // 会话列表宽度
@@ -62,7 +67,7 @@ const Platform = () => {
 
   useEffect(() => {
     console.log("searchParams changed:", searchParams.get("platformName"));
-    setAppName(searchParams.get("platformName") || "");
+    setAppName(searchParams.get("platformName")!);
   }, [searchParams]);
 
   const sessionContentRef = useRef<HTMLDivElement>(null);
@@ -83,14 +88,21 @@ const Platform = () => {
       const notAllHidden =
         selectedSessionId && selectedSessionId.indexOf(appName) > -1;
 
+      console.log("notAllHidden: ", notAllHidden);
+
       if (notAllHidden) {
         // 显示指定的browser-view
-        (window as any)?.vscode?.ipcRenderer?.invoke("show-browser-view", {
-          sessionId: selectedSessionId,
-        });
+        ((window as any)?.vscode?.ipcRenderer as IpcRenderer)?.invoke(
+          "show-browser-view",
+          {
+            sessionId: selectedSessionId,
+          }
+        );
       } else {
         // 先隐藏所有的browser-view
-        (window as any)?.vscode?.ipcRenderer?.invoke("hide-all-browser-view");
+        ((window as any)?.vscode?.ipcRenderer as IpcRenderer)?.invoke(
+          "hide-all-browser-view"
+        );
       }
     }
   }, [appName]);

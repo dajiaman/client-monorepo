@@ -1,5 +1,6 @@
 import { BrowserView, BrowserWindow, dialog } from "electron";
 import EventEmitter from "events";
+import { SessionManager } from "./sessionManager";
 
 export class CodeView extends EventEmitter {
   private readonly _view: Electron.BrowserView;
@@ -24,12 +25,18 @@ export class CodeView extends EventEmitter {
 
   private visibilityState = VisibilityState.NONE;
 
+  private _url: string;
+  get url() {
+    return this._url;
+  }
+
   constructor(
     containerId: string,
     url: string,
     options: Electron.BrowserViewConstructorOptions
   ) {
     super();
+    this._url = url;
     this._containerId = containerId;
 
     // session partition
@@ -44,41 +51,53 @@ export class CodeView extends EventEmitter {
 
     this._view = view;
     this._id = this._view.webContents.id;
-    this._lastFocusTime = Date.now();
-    this.fitWindow();
 
-    this._view?.webContents.loadURL(url);
-
-    (global?.window as BrowserWindow)?.setBrowserView(view);
-
-    this._view?.webContents.executeJavaScript(`
-      window.name = "${containerId}";
-      console.log('name:', name);
-      document.addEventListener("visibilitychange", () => {
-        console.log("visibilitychange", document.visibilityState);
-      });
-    `);
-
-    // 模拟内存泄漏
-    // setTimeout(() => {
-    //   console.log("模拟内存泄漏");
-    //   this._view?.webContents.executeJavaScript(`
-    //     console.log('模拟内存泄漏');
-    //     for (let i = 1; i < 99999999; i++) {
-    //         const dom = document.createElement("div");
-    //         document.body.appendChild(dom);
-    //     }
-    //   `);
-    // }, 5000);
+    new SessionManager(this._view.webContents.session, "telegram");
 
     this.registerListeners();
+  }
+
+  async startup(url: string) {
+    try {
+      await this._view?.webContents.loadURL(url);
+      this.fitWindow();
+      this.executeJavaScript(`
+        window.name = "${this.containerId}";
+        console.log('name:', name);
+        document.addEventListener("visibilitychange", () => {
+          console.log("visibilitychange", document.visibilityState);
+        });
+      `);
+
+      // this.executeJavaScript(`
+      //   setTimeout(() => {
+      //     if( !window["dontNeedMock"]) {
+      //     console.log('模拟内存泄漏');
+      //     for (let i = 0; i < 999999999; i++) {
+      //       const dom = document.createElement('div');
+      //       document.body.appendChild(dom);
+      //     }
+      //   }
+      //   }, 10000);
+      // `);
+
+      return this.containerId;
+    } catch (error) {
+      console.log(
+        "browserView load error:",
+        JSON.stringify(error),
+        "code:",
+        error?.code
+      );
+      throw error?.code;
+    }
   }
 
   /**
    * 重启
    */
   reLaunch() {
-    this.emit("relauch", {
+    this.emit("relaunch", {
       containerId: this.containerId,
     });
 
@@ -91,7 +110,7 @@ export class CodeView extends EventEmitter {
    * Handle events
    */
   private registerListeners() {
-    this._view.webContents.on("will-prevent-unload", (event) => {
+    this._view?.webContents.on("will-prevent-unload", (event) => {
       console.log("will-prevent-unload");
       event.preventDefault();
     });
@@ -116,24 +135,25 @@ export class CodeView extends EventEmitter {
       this.reLaunch();
     });
 
-    this._view.webContents.on("did-navigate", () => {
-      console.log("did-navigate");
-    });
-
     this._view?.webContents.on("focus", () => {
       console.log("focus", this.containerId);
-      if (
-        this._view?.webContents?.isCrashed() ||
-        this._view?.webContents?.isDestroyed()
-      ) {
+      if (this._view?.webContents?.isDestroyed()) {
+        console.log("focus view isDestroyed");
         return;
+      }
+      if (this._view?.webContents?.isCrashed()) {
+        console.log("focus view isCrashed");
+        this.reLaunch();
       }
       this._lastFocusTime = Date.now();
     });
 
     this._view?.webContents.on("blur", () => {
       console.log("blur", this.containerId);
-      if (this._view?.webContents?.isDestroyed()) {
+      if (
+        this._view?.webContents?.isDestroyed() ||
+        this._view?.webContents?.isCrashed()
+      ) {
         return;
       }
     });
@@ -144,12 +164,11 @@ export class CodeView extends EventEmitter {
       this.emit("destroyed");
     });
 
-    this._view.webContents.on("did-finish-load", () => {
+    this._view?.webContents?.on("did-finish-load", () => {
       setTimeout(() => {
         this.fitWindow();
-
         if (process.env.NODE_ENV === "development") {
-          this._view.webContents.openDevTools();
+          this._view?.webContents?.openDevTools();
         }
       });
     });
@@ -167,6 +186,10 @@ export class CodeView extends EventEmitter {
     });
   }
 
+  /**
+   * 强制垃圾回收
+   * @returns
+   */
   forceGc() {
     if (this._view?.webContents?.isDestroyed()) {
       return;
@@ -231,10 +254,8 @@ export class CodeView extends EventEmitter {
     }
 
     this._view?.webContents?.close();
-    try {
-      // @ts-ignore
-      this._view?.webContents?.destroy();
-    } catch (error) {}
+    // @ts-ignore
+    this._view?.webContents?.destroy();
   }
 }
 

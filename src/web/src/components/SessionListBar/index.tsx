@@ -37,6 +37,8 @@ const SessionListBar: FC<StateProps> = ({
   const removeSession = createSelectors(useSessionStore).use.removeSession();
   // 启动
   const startSession = createSelectors(useSessionStore).use.startSession();
+  const showSessionView =
+    createSelectors(useSessionStore).use.showSessionView();
   // 关闭
   const closeSession = createSelectors(useSessionStore).use.closeSession();
   // 更新备注
@@ -59,8 +61,8 @@ const SessionListBar: FC<StateProps> = ({
   }, [sessionList, appName]);
 
   // 新增按钮点击
-  const createNewSession = () => {
-    addSesssion(appName);
+  const createNewSession = async () => {
+    await addSesssion(appName);
   };
 
   // 重置选中sessionId为空
@@ -73,10 +75,13 @@ const SessionListBar: FC<StateProps> = ({
     Message.clear();
     Message.info("模拟启动");
     const sessionId = session.sessionId;
-    console.log("startSessionHandler", session);
-    await startSession(appName, session.sessionId);
-    Message.clear();
-    updateSelectedSessionId(sessionId);
+    try {
+      await startSession(appName, session.sessionId);
+      updateSelectedSessionId(sessionId);
+      showSessionView(appName, sessionId);
+    } catch (error) {
+      console.log("启动失败", error);
+    }
   };
 
   /**
@@ -148,12 +153,12 @@ const SessionListBar: FC<StateProps> = ({
           </Button> */}
         </div>
       </div>
-      <div>
-        <Button type="primary" onClick={createNewSession}>
+      <div className="add-btn-wrapper">
+        <Button type="primary" long onClick={createNewSession}>
           {t("new-session")}
         </Button>
       </div>
-      <div className="content">
+      <div className="sessionlist-bar-content">
         <PerfectScrollbar>
           <div className="panel-view">
             {appSessionList?.map((session) => {

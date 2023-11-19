@@ -39,7 +39,7 @@
     "ts-loader": "^9.4.2",
     "typescript": "^5.2.2",
     "ts-node": "^10.9.1",
-    "electron": "22.3.27",
+    "electron": "25.9.4",
     "event-stream": "3.3.4",
     "deemon": "^1.8.0",
     "debounce": "^1.0.0",

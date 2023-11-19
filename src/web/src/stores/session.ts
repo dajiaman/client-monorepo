@@ -1,4 +1,3 @@
-import { reject } from "lodash-es";
 import { SessionAppParam } from "../types/session";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -7,6 +6,7 @@ import { buildSessionId } from "../utils/buildSessionId";
 import { AppNameEnum } from "../config/app.config";
 import useAppStore from "./app";
 import { IS_ELECTRON_BUILD } from "../config";
+import { IpcRenderer } from "../../typings/electronTypes";
 
 interface SessionStoreState {
   sessionList: Record<string, SessionAppParam[]>;
@@ -18,7 +18,8 @@ interface SessionStoreState {
   addSession: (appName: string) => Promise<boolean>;
   resetAllSesssion: () => Promise<any>;
   removeSession: (appName: string, sessionId: string) => Promise<boolean>;
-  startSession: (appName: string, sessionId: string) => Promise<boolean>;
+  startSession: (appName: string, sessionId: string) => Promise<any>;
+  showSessionView: (appName: string, sessionId: string) => Promise<boolean>;
   closeSession: (appName: string, sessionId: string) => Promise<boolean>;
   updateSessionRemark: (
     appName: string,
@@ -118,12 +119,17 @@ const useSessionStore = create<SessionStoreState>()(
         // 启动会话
         startSession: async (appName: string, sessionId: string) => {
           if (IS_ELECTRON_BUILD) {
-            await (window as any)?.vscode?.ipcRenderer?.invoke(
-              "open-browser-view",
-              {
-                sessionId: sessionId,
-              }
-            );
+            try {
+              await ((window as any)?.vscode?.ipcRenderer as IpcRenderer)?.invoke(
+                "open-browser-view",
+                {
+                  sessionId: sessionId,
+                }
+              );
+            } catch (error: any) {
+              console.log("startSession error: ", typeof error);
+              throw error;
+            }
           }
 
           set((state) => {
@@ -143,7 +149,16 @@ const useSessionStore = create<SessionStoreState>()(
               },
             };
           });
+          return true;
+        },
 
+        showSessionView: async (appName: string, sessionId: string) => {
+          await ((window as any)?.vscode?.ipcRenderer as IpcRenderer)?.invoke(
+            "show-browser-view",
+            {
+              sessionId: sessionId,
+            }
+          );
           return true;
         },
 
