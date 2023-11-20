@@ -9,11 +9,13 @@
   },
   "scripts": {
     "dev": "nx run-many --target=dev",
-    "build": "nx run-many --target=build",
+    "start-electron": "electron .",
+    "build": "nx run-many --target=build --projects=electron,web,business",
     "build:preload": "nx run-many --target=watch-preload --projects=electron",
     "build:web": "nx run build --project=web",
     "package": "node ./build/pack.js",
-    "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir"
+    "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir",
+    "watch-client": "nx run watch-client --project=electron"
   },
   "private": true,
   "dependencies": {
@@ -28,6 +30,7 @@
     "@rspack/plugin-react-refresh": "0.3.11",
     "@types/lodash-es": "^4.17.10",
     "@types/node": "^20.8.10",
+    "@vscode/gulp-electron": "^1.36.0",
     "cross-env": "7.0.3",
     "electron-builder": "^24.6.4",
     "gulp-typescript": "6.0.0-alpha.1",

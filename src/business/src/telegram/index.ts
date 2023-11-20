@@ -1,19 +1,5 @@
+import { ipcRenderer } from "electron";
 import { isUndefined } from "lib/common/type";
-import EventEmitter from "events";
-import { Subject, debounceTime, first, fromEvent } from "rxjs";
-
-const authObservable$ = new Subject();
-authObservable$.subscribe((authState) => {
-  console.log("authObservable subscribe value:", authState);
-});
-
-const domObservable$ = new Subject<HTMLElement[]>();
-domObservable$.pipe(debounceTime(250)).subscribe((doms) => {
-  // 只渲染这部分的dom
-  console.log("domObservable subscribe value:", doms);
-});
-
-const eventEmitter = new EventEmitter();
 
 if (!window["interceptLoader"]) {
   (window as any)["interceptLoader"] = function (
@@ -36,18 +22,6 @@ if (!window["interceptLoader"]) {
           });
         }
 
-        const authState = window?.__modules?.getGlobal()?.authState;
-        if (authState) {
-          if (
-            authState === "authorizationStateReady" &&
-            window?.__modules?.getGlobal()?.currentUserId
-          ) {
-            authObservable$.next(true);
-          }
-        } else {
-          authObservable$.next(false);
-        }
-
         window["__modules"]["addActionHandler"]("signUp", (...args: any) => {
           console.log("ActionHandler signUp", ...args);
         });
@@ -58,22 +32,6 @@ if (!window["interceptLoader"]) {
             console.log("ActionHandler setGlobalSearchClosing", ...args);
           }
         );
-
-        fromEvent(eventEmitter, "updateCurrentUser")
-          .pipe(first())
-          .subscribe((...args: any) => {
-            // 登录后获取到用户信息，算是登录成功
-            console.log("updateCurrentUser subscribe", ...args);
-          });
-
-        fromEvent(eventEmitter, "updateUser")
-          .pipe(first())
-          .subscribe((...args: any) => {
-            console.log("updateUser subscribe", ...args);
-            setTimeout(() => {
-              // alert("初始化完成");
-            });
-          });
 
         window["__modules"]["addActionHandler"]("apiUpdate", (...args: any) => {
           const update = args[2];
@@ -86,25 +44,14 @@ if (!window["interceptLoader"]) {
           }
 
           if (update["@type"] === "updateCurrentUser") {
-            eventEmitter.emit("updateCurrentUser", args[2]);
           }
 
           if (update["@type"] === "updateUser") {
-            eventEmitter.emit("updateUser", args[2]);
           }
         });
 
-        // fromEvent(eventEmitter, "openChat")
-        //   .pipe(debounceTime(50))
-        //   .subscribe((...args: any) => {
-        //     console.log("fromEvent openChat", ...args);
-        //     const list = document.querySelectorAll(".message-list-item");
-        //     domObservable$.next(list as any);
-        //   });
-
         // window["__modules"]["addActionHandler"]("openChat", (...args: any) => {
         //   console.log("ActionHandler openChat", ...args);
-        //   eventEmitter.emit("openChat", args[2]);
         // });
       }, 300);
     }
@@ -116,6 +63,7 @@ if (!window["interceptLoader"]) {
 console.log("window.interceptLoader", (window as any).interceptLoader);
 (window as any).sessionTranslationSetting = {};
 
+// 对
 document.addEventListener("DOMContentLoaded", () => {
   // 插入css
   const style = document.createElement("style");
@@ -127,20 +75,31 @@ document.addEventListener("DOMContentLoaded", () => {
       animation: none;
       transition: none;
     }
-
-    .message-list-item {
-      transition: none !important;
-    }
-
-    .chat-item-clickable.has-rippe {
-      transition: none !important;
-    }
   `;
   document.head.appendChild(style);
 
-  setTimeout(() => {
-    // 修改css 变量
-    const root = document.documentElement;
-    root.style.setProperty("--slide-transition", "0s");
-  }, 2000);
+  const timer = setInterval(() => {
+    const startTime = Date.now();
+    // @ts-ignore
+    const memoryUsagePercent = // @ts-ignore
+      window.performance?.memory.usedJSHeapSize /
+      // @ts-ignore
+      window.performance?.memory.totalJSHeapSize;
+
+    ipcRenderer
+      .invoke("test-heartbeat", {
+        memoryUsagePercent,
+      })
+      .then(() => {
+        const endTime = Date.now();
+        const diff = endTime - startTime;
+        console.log("test-heartbeat diff: ", diff + "ms");
+        if (diff >= 1000) {
+          // 很卡了
+          clearInterval(timer);
+          alert("Telegram卡顿，即将刷新页面!!");
+          window.location.reload();
+        }
+      });
+  }, 5000);
 });

@@ -53,15 +53,12 @@ app.once("ready", async () => {
   });
 
   // unhandledRejection 事件
-  process.on("unhandledRejection", (err) => {
-    dialog.showErrorBox(
-      "Error",
-      "unhandledRejection global: " + err?.toString()
-    );
+  process.on("unhandledRejection", (err: any) => {
+    dialog.showErrorBox("Error", "unhandledRejection global: " + err);
   });
 
   // 替代 gpu-process-crashed
-  app.on("child-process-gone", (event, details) => {
+  app.on("child-process-gone", (_event, details) => {
     dialog.showErrorBox(
       "Error",
       "child-process-gone: " + JSON.stringify(details)
@@ -106,6 +103,10 @@ app.once("ready", async () => {
     console.log("open-browser-view", args);
     const { sessionId } = args;
 
+    if (!sessionId) {
+      return;
+    }
+
     // 如果存在就不打开
     if (viewsService.getViewByName(sessionId)) {
       viewsService.getViewByName(sessionId)?.fitWindow();
@@ -129,29 +130,30 @@ app.once("ready", async () => {
         `https://web.telegram.org/a/`,
         {
           webPreferences: {
-            nodeIntegration:
-              process.env.NODE_ENV === "development" ? true : false,
+            nodeIntegration: true,
+            contextIsolation: false,
             javascript: true,
             additionalArguments: [`--sessionId=${sessionId}`],
             v8CacheOptions: "bypassHeatCheck",
             enableWebSQL: false,
+            webgl: false,
             spellcheck: false,
             autoplayPolicy: "user-gesture-required",
             experimentalFeatures: false,
             zoomFactor: 1,
-            contextIsolation: false,
-            webgl: false,
-            preload:
-              process.env.NODE_ENV === "development" ? preloadPath : undefined,
+            preload: preloadPath,
           },
         }
       );
 
       return codeView?.containerId;
-    } catch (error) {
-      console.log("open-browser-view error:", error);
+    } catch (error: any) {
       throw error;
     }
+  });
+
+  ipcMain.handle("test-heartbeat", async () => {
+    return;
   });
 
   /**

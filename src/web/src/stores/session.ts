@@ -14,7 +14,7 @@ interface SessionStoreState {
   selectedSessionId: string;
 
   setSelectedSessionId: (sessionId: string) => void;
-
+  resetSelectedSessionId: () => void;
   addSession: (appName: string) => Promise<boolean>;
   resetAllSesssion: () => Promise<any>;
   removeSession: (appName: string, sessionId: string) => Promise<boolean>;
@@ -45,7 +45,14 @@ const useSessionStore = create<SessionStoreState>()(
             };
           });
         },
-
+        // 重置为空
+        resetSelectedSessionId: () => {
+          set(() => {
+            return {
+              selectedSessionId: "",
+            };
+          });
+        },
         // 添加新会话
         addSession: (appName: string) => {
           set((state) => {
@@ -118,14 +125,16 @@ const useSessionStore = create<SessionStoreState>()(
 
         // 启动会话
         startSession: async (appName: string, sessionId: string) => {
+          if (!sessionId) {
+            throw new Error("sessionId is empty");
+          }
           if (IS_ELECTRON_BUILD) {
             try {
-              await ((window as any)?.vscode?.ipcRenderer as IpcRenderer)?.invoke(
-                "open-browser-view",
-                {
-                  sessionId: sessionId,
-                }
-              );
+              await (
+                (window as any)?.vscode?.ipcRenderer as IpcRenderer
+              )?.invoke("open-browser-view", {
+                sessionId: sessionId,
+              });
             } catch (error: any) {
               console.log("startSession error: ", typeof error);
               throw error;
@@ -385,6 +394,13 @@ const useSessionStore = create<SessionStoreState>()(
       {
         name: "sessionList-storage",
         version: 1,
+        partialize: (state) => {
+          return Object.fromEntries(
+            Object.entries(state).filter(
+              ([key]) => !["selectedSessionId"].includes(key)
+            )
+          );
+        },
         storage: indexdbStorage,
       }
     )

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development APP_ENV=development rspack build --watch",
     "gulp": "node --max_old_space_size=8192 ./node_modules/gulp/bin/gulp.js",
-    "build": "cross-env NODE_ENV=production APP_ENV=production gulp"
+    "build": "cross-env NODE_ENV=production APP_ENV=production rspack build"
   },
   "keywords": [],
   "author": "",

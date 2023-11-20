@@ -75,8 +75,11 @@ const SessionListBar: FC<StateProps> = ({
     Message.clear();
     Message.info("模拟启动");
     const sessionId = session.sessionId;
+    if (!sessionId) {
+      return;
+    }
     try {
-      await startSession(appName, session.sessionId);
+      await startSession(appName, sessionId);
       updateSelectedSessionId(sessionId);
       showSessionView(appName, sessionId);
     } catch (error) {

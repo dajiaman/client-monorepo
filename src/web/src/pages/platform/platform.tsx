@@ -35,6 +35,9 @@ const Platform = () => {
   const setSelectedSessionId =
     createSelectors(useSessionStore).use.setSelectedSessionId();
 
+  const showSessionView =
+    createSelectors(useSessionStore).use.showSessionView();
+
   // 更新选中的会话id
   const updateSelectedSessionId = (sessionId: string) => {
     if (selectedSessionId !== sessionId) {
@@ -56,6 +59,8 @@ const Platform = () => {
     if (!newValue) {
       return;
     }
+
+    showSessionView(appName, newValue);
   };
 
   // 会话列表宽度

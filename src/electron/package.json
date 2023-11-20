@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "cross-env NODE_ENV=development APP_ENV=development electronmon -r ts-node/register/transpile-only . ",
+    "dev2": "npm run watch-client",
     "dev-backup": "cross-env NODE_ENV=development APP_ENV=development electronmon -r ts-node/register/transpile-only .",
     "watch-preload": "cross-env NODE_ENV=development APP_ENV=development gulp watch-preload",
     "build": "cross-env NODE_ENV=production APP_ENV=production rspack build",

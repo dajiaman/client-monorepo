@@ -1,6 +1,5 @@
 import { BrowserView, BrowserWindow, dialog } from "electron";
 import EventEmitter from "events";
-import { SessionManager } from "./sessionManager";
 
 export class CodeView extends EventEmitter {
   private readonly _view: Electron.BrowserView;
@@ -52,7 +51,7 @@ export class CodeView extends EventEmitter {
     this._view = view;
     this._id = this._view.webContents.id;
 
-    new SessionManager(this._view.webContents.session, "telegram");
+    // new SessionManager(this._view.webContents.session, "telegram");
 
     this.registerListeners();
   }
@@ -69,26 +68,22 @@ export class CodeView extends EventEmitter {
         });
       `);
 
-      // this.executeJavaScript(`
-      //   setTimeout(() => {
-      //     if( !window["dontNeedMock"]) {
-      //     console.log('模拟内存泄漏');
-      //     for (let i = 0; i < 999999999; i++) {
-      //       const dom = document.createElement('div');
-      //       document.body.appendChild(dom);
-      //     }
-      //   }
-      //   }, 10000);
-      // `);
+      this.executeJavaScript(`
+        setTimeout(() => {
+          if(!window["dontNeedMock"]) {
+            setInterval(() => {
+              console.log('模拟卡顿');
+              for (let i = 0; i < 99; i++) {
+                new Array(1024 * 99).join("a");
+              }
+            }, 2000);
+          }
+        }, 5000);
+      `);
 
       return this.containerId;
-    } catch (error) {
-      console.log(
-        "browserView load error:",
-        JSON.stringify(error),
-        "code:",
-        error?.code
-      );
+    } catch (error: any) {
+      console.log("browserView load error:", error, "code:", error?.code);
       throw error?.code;
     }
   }
@@ -113,6 +108,10 @@ export class CodeView extends EventEmitter {
     this._view?.webContents.on("will-prevent-unload", (event) => {
       console.log("will-prevent-unload");
       event.preventDefault();
+    });
+
+    this._view?.webContents?.on("dom-ready", () => {
+      console.log("dom-ready");
     });
 
     this._view?.webContents?.once("render-process-gone", (_event, details) => {

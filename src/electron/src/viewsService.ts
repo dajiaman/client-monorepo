@@ -6,6 +6,12 @@ import { sleep } from "./utils";
 export class ViewsService extends EventEmitter {
   private readonly views = new Map<string, CodeView>();
 
+  // 当前选中
+  private _selectedTabId: string = "";
+  get selectedTabId() {
+    return this._selectedTabId;
+  }
+
   constructor() {
     super();
 
@@ -97,7 +103,11 @@ export class ViewsService extends EventEmitter {
     return this.views.size;
   }
 
-  // 切换tab
+  /**
+   * 切换tab
+   * @param containerId
+   * @returns
+   */
   switchTabWithId(containerId: string) {
     const view = this.getViewByName(containerId);
     if (!view) {
@@ -105,6 +115,7 @@ export class ViewsService extends EventEmitter {
     }
     this.attachContainerIfNeed(view!);
     global?.window?.setTopBrowserView(view?.view!);
+    this._selectedTabId = containerId;
     this.removeAllWithoutTab(containerId);
     view?.view?.webContents?.focus();
   }
@@ -130,6 +141,7 @@ export class ViewsService extends EventEmitter {
       this.views?.delete(containerId);
       return true;
     }
+
     return true;
   }
 
